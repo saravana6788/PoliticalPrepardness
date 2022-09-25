@@ -11,6 +11,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +20,7 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.android.politicalpreparedness.R
@@ -86,6 +88,7 @@ class DetailFragment : Fragment() {
             Toast.makeText(requireContext(),it,Toast.LENGTH_LONG).show()
         }
 
+
         //TODO: Populate Representative adapter
 
         //TODO: Establish button listeners for field and location search
@@ -126,28 +129,37 @@ class DetailFragment : Fragment() {
 
     private fun getLocation() {
         //TODO: Get location from LocationServices
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Activity)
-        if(isLocationEnabled()) {
-            fusedLocationClient.lastLocation.addOnSuccessListener {
-                if (it == null) {
-                    requestNewLocationData()
-                } else {
-                    lastLocation = it
+        try {
+            fusedLocationClient =
+                LocationServices.getFusedLocationProviderClient(activity as Activity)
+            if (isLocationEnabled()) {
+                fusedLocationClient.lastLocation.addOnSuccessListener {
+                    if (it == null) {
+                        requestNewLocationData()
+                    } else {
+                        lastLocation = it
+                    }
+                    val currentAddress = geoCodeLocation(lastLocation)
+                    binding.addressLine1.setText(currentAddress.line1)
+                    binding.addressLine2.setText(currentAddress.line2)
+                    binding.city.setText(currentAddress.city)
+                    binding.zip.setText(currentAddress.zip)
+                    setSpinnerValue(currentAddress.state)
+
+
                 }
-                val currentAddress = geoCodeLocation(lastLocation)
-                binding.addressLine1.setText(currentAddress.line1)
-                binding.addressLine2.setText(currentAddress.line2)
-                binding.city.setText(currentAddress.city)
-                binding.zip.setText(currentAddress.zip)
-                setSpinnerValue(currentAddress.state)
-
-
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Please turn ON Location Services to get the current location",
+                    Toast.LENGTH_LONG
+                ).show()
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
             }
-        }else{
-            Toast.makeText(requireContext(),"Please turn ON Location Services to get the current location",Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-            startActivity(intent)
-        }
+        }catch (exception:SecurityException){
+        Log.e("RepresentativeFrag","Permission Issue")
+    }
         //TODO: The geoCodeLocation method is a helper function to change the lat/long location to a human readable street address
     }
 
@@ -189,7 +201,7 @@ class DetailFragment : Fragment() {
                 Looper.myLooper()
             )
         }catch (exception:SecurityException){
-
+                Log.e("RepresentativeFrag","Permission Issue")
         }
 
     }

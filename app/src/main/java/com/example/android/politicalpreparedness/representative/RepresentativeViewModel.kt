@@ -47,6 +47,9 @@ class RepresentativeViewModel(val database:ElectionDatabase): ViewModel() {
                     .await()
                 _representatives.value =
                     offices.flatMap { office -> office.getRepresentatives(officials) }
+
+                showProgress.value = false
+
             }catch (exception:Exception){
                 showProgress.value = false
                 _error.value = "Oops! Unable to fetch the representatives. Please try later"

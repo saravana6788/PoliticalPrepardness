@@ -66,6 +66,7 @@ class ElectionsFragment: Fragment() {
         }
 
 
+
     }
 
     override fun onResume() {
