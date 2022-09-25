@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+            <variable
+                name="election"
+                type="com.example.android.politicalpreparedness.network.models.Election" />
+
+        <variable name="viewModel"
+            type= "com.example.android.politicalpreparedness.election.ElectionInformationViewModel"/>
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/election_information_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".election.ElectionInformation">
+
+        <TextView
+            android:id="@+id/election_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@{election.name}"
+            tools:text="Wisconsin Presidential Election"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:background="@color/colorPrimary"
+            android:textColor="@color/white"
+            android:textSize="@dimen/scapix_24"
+            android:paddingTop="@dimen/dimen_8"
+            android:paddingBottom="@dimen/dimen_8"
+            android:paddingStart="@dimen/dimen_8" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/election_date"
+            android:text="@{election.electionDay.toString()}"
+            app:layout_constraintTop_toBottomOf="@id/election_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="@dimen/dimen_8"
+            tools:text="Display Date"
+            android:textSize="@dimen/scapix_16"
+            android:layout_marginTop="@dimen/dimen_8"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/election_info_title"
+            android:text="@string/election_information"
+            android:textSize="@dimen/scapix_20"
+            app:layout_constraintTop_toBottomOf="@id/election_date"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="@dimen/dimen_8"
+            android:textColor="@color/gray50"
+            android:textStyle="bold"
+            android:layout_marginTop="25dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/election_voting_locations"
+            app:layout_constraintTop_toBottomOf="@id/election_info_title"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="@dimen/dimen_8"
+            android:text="@string/voting_locations"
+            android:textSize="@dimen/scapix_16"
+            android:layout_marginTop="@dimen/dimen_8"
+            android:textColor="@color/colorPrimary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/election_ballot_information"
+            app:layout_constraintTop_toBottomOf="@id/election_voting_locations"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="@dimen/dimen_8"
+            android:text="@string/ballot_information"
+            android:textSize="@dimen/scapix_16"
+            android:layout_marginTop="@dimen/dimen_8"
+            android:textColor="@color/colorPrimary" />
+
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/save_election"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="@dimen/dimen_25"
+            android:text="@string/follow_election_button_text"
+            android:layout_marginStart="@dimen/dimen_8"
+            android:layout_marginEnd="@dimen/dimen_8"
+            android:background="@color/colorPrimary"
+            android:textColor="@color/white"
+            />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

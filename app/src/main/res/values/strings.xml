@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Political Preparedness</string>
+    <string name="ballot_img_content_description">Showing ballot image</string>
+    <string name="upcoming_elections_button_text">Upcoming Elections</string>
+    <string name="find_my_representatives_button">Find my Representatives</string>
+    <string name="saved_elections_header">Saved Elections</string>
+    <string name="upcoming_elections_header_text">Upcoming Elections</string>
+    <string name="follow_election_button_text">Follow Election</string>
+    <string name="unfollow_election_button_text">UnFollow Election</string>
+    <string name="voting_locations">Voting Locations</string>
+    <string name="ballot_information">Ballot Information</string>
+    <string name="election_information">Election Information</string>
+    <string name="find_my_representatives">Find My Representatives</string>
+    <string name="use_my_location">Use my location</string>
+    <string name="my_representatives">My Representatives</string>
+
+    <!-- TODO: Add necessary string values -->
+
+</resources>

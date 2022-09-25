@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="default_padding">8dp</dimen>
+    <dimen name="dimen_16">16dp</dimen>
+    <dimen name="dimen_4">4dp</dimen>
+    <dimen name="dimen_60">60dp</dimen>
+    <dimen name="dimen_8">8dp</dimen>
+    <dimen name="dimen_25">25dp</dimen>
+    <dimen name="dimen_24">24dp</dimen>
+    <dimen name="dimen_20">20dp</dimen>
+    <dimen name="dimen_50">50dp</dimen>
+
+
+
+    <dimen name="scapix_24">24sp</dimen>
+    <dimen name="scapix_16">16sp</dimen>
+    <dimen name="scapix_20">20sp</dimen>
+    <dimen name="scapix_8">8sp</dimen>
+    <dimen name="scapix_10">10sp</dimen>
+    <dimen name="scapix_12">12sp</dimen>
+    <dimen name="scapix_14">14sp</dimen>
+
+
+    <!-- TODO: Add necessary dimension values -->
+
+</resources>
