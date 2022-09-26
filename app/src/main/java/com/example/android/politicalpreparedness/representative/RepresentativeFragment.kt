@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
@@ -11,6 +12,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,6 +21,7 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.android.politicalpreparedness.R
@@ -26,7 +29,9 @@ import com.example.android.politicalpreparedness.database.ElectionDatabase
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 
@@ -52,6 +57,7 @@ class DetailFragment : Fragment() {
 
         //TODO: Establish bindings
         binding = FragmentRepresentativeBinding.inflate(inflater)
+        savedInstanceState?.getBundle("layoutState")?.let { binding.representativeLayout.transitionState = it }
         val viewModelFactory = RepresentativeViewModelFactory(ElectionDatabase.getInstance(requireContext()))
         viewModel = ViewModelProvider(this,viewModelFactory)[RepresentativeViewModel::class.java]
         binding.lifecycleOwner = this
@@ -86,6 +92,7 @@ class DetailFragment : Fragment() {
             Toast.makeText(requireContext(),it,Toast.LENGTH_LONG).show()
         }
 
+
         //TODO: Populate Representative adapter
 
         //TODO: Establish button listeners for field and location search
@@ -107,8 +114,7 @@ class DetailFragment : Fragment() {
             getLocation()
             true
         } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
@@ -126,28 +132,37 @@ class DetailFragment : Fragment() {
 
     private fun getLocation() {
         //TODO: Get location from LocationServices
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity as Activity)
-        if(isLocationEnabled()) {
-            fusedLocationClient.lastLocation.addOnSuccessListener {
-                if (it == null) {
-                    requestNewLocationData()
-                } else {
-                    lastLocation = it
+        try {
+            fusedLocationClient =
+                LocationServices.getFusedLocationProviderClient(activity as Activity)
+            if (isLocationEnabled()) {
+                fusedLocationClient.lastLocation.addOnSuccessListener {
+                    if (it == null) {
+                        requestNewLocationData()
+                    } else {
+                        lastLocation = it
+                    }
+                    val currentAddress = geoCodeLocation(lastLocation)
+                    binding.addressLine1.setText(currentAddress.line1)
+                    binding.addressLine2.setText(currentAddress.line2)
+                    binding.city.setText(currentAddress.city)
+                    binding.zip.setText(currentAddress.zip)
+                    setSpinnerValue(currentAddress.state)
+
+
                 }
-                val currentAddress = geoCodeLocation(lastLocation)
-                binding.addressLine1.setText(currentAddress.line1)
-                binding.addressLine2.setText(currentAddress.line2)
-                binding.city.setText(currentAddress.city)
-                binding.zip.setText(currentAddress.zip)
-                setSpinnerValue(currentAddress.state)
-
-
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Please turn ON Location Services to get the current location",
+                    Toast.LENGTH_LONG
+                ).show()
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                startActivity(intent)
             }
-        }else{
-            Toast.makeText(requireContext(),"Please turn ON Location Services to get the current location",Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-            startActivity(intent)
-        }
+        }catch (exception:SecurityException){
+        Log.e("RepresentativeFrag","Permission Issue")
+    }
         //TODO: The geoCodeLocation method is a helper function to change the lat/long location to a human readable street address
     }
 
@@ -189,7 +204,7 @@ class DetailFragment : Fragment() {
                 Looper.myLooper()
             )
         }catch (exception:SecurityException){
-
+                Log.e("RepresentativeFrag","Permission Issue")
         }
 
     }
@@ -207,5 +222,13 @@ class DetailFragment : Fragment() {
             LocationManager.NETWORK_PROVIDER
         )
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBundle("layoutState", binding.representativeLayout.transitionState)
+    }
+
+
+
 
 }
