@@ -17,6 +17,7 @@ fun fetchImage(view: ImageView, src: String?) {
             .load(uri)
             .circleCrop()
             .placeholder(R.drawable.ic_profile)
+            .error(R.drawable.ic_broken_image)
             .into(view)
     }
 }

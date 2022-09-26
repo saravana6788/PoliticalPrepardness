@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
@@ -28,7 +29,9 @@ import com.example.android.politicalpreparedness.database.ElectionDatabase
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
+import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 
@@ -54,6 +57,7 @@ class DetailFragment : Fragment() {
 
         //TODO: Establish bindings
         binding = FragmentRepresentativeBinding.inflate(inflater)
+        savedInstanceState?.getBundle("layoutState")?.let { binding.representativeLayout.transitionState = it }
         val viewModelFactory = RepresentativeViewModelFactory(ElectionDatabase.getInstance(requireContext()))
         viewModel = ViewModelProvider(this,viewModelFactory)[RepresentativeViewModel::class.java]
         binding.lifecycleOwner = this
@@ -110,8 +114,7 @@ class DetailFragment : Fragment() {
             getLocation()
             true
         } else {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
+            requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
@@ -219,5 +222,13 @@ class DetailFragment : Fragment() {
             LocationManager.NETWORK_PROVIDER
         )
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBundle("layoutState", binding.representativeLayout.transitionState)
+    }
+
+
+
 
 }
