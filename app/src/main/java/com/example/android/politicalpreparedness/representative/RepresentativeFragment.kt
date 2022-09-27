@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.location.Location
@@ -19,19 +18,17 @@ import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
+import androidx.constraintlayout.motion.widget.MotionLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.android.politicalpreparedness.R
 import com.example.android.politicalpreparedness.database.ElectionDatabase
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
-import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 
@@ -40,6 +37,9 @@ class DetailFragment : Fragment() {
     companion object {
         //TODO: Add Constant for Location request
         private const val REQUEST_LOCATION_PERMISSION = 1
+        private const val  RECYCLER_INDEX_KEY = "representative_recycler_index"
+        private const val  MOTIONLAYOUT_KEY = "layout_state"
+        private const val RECYCLER_DATA = "representative_data"
     }
 
     //TODO: Declare ViewModel
@@ -57,9 +57,11 @@ class DetailFragment : Fragment() {
 
         //TODO: Establish bindings
         binding = FragmentRepresentativeBinding.inflate(inflater)
-        savedInstanceState?.getBundle("layoutState")?.let { binding.representativeLayout.transitionState = it }
+        //savedInstanceState?.getInt(MOTIONLAYOUT_KEY)?.let { binding.representativeLayout.transitionToState(it)  }
         val viewModelFactory = RepresentativeViewModelFactory(ElectionDatabase.getInstance(requireContext()))
         viewModel = ViewModelProvider(this,viewModelFactory)[RepresentativeViewModel::class.java]
+        fusedLocationClient =
+            LocationServices.getFusedLocationProviderClient(requireContext())
         binding.lifecycleOwner = this
         binding.viewModel = viewModel
 
@@ -86,10 +88,42 @@ class DetailFragment : Fragment() {
             val adapter = RepresentativeListAdapter()
             adapter.submitList(it)
             binding.representativeList.adapter = adapter
+            try {
+                savedInstanceState?.getInt(RECYCLER_INDEX_KEY).let {
+                    if (it != null) { binding.representativeList.layoutManager!!.scrollToPosition(it+it)
+                    }}
+            }catch (e:Exception){
+            }
         }
 
         viewModel.error.observe(viewLifecycleOwner){
             Toast.makeText(requireContext(),it,Toast.LENGTH_LONG).show()
+        }
+
+
+        binding.representativeLayout.addTransitionListener(object : MotionLayout.TransitionListener {
+            override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {}
+            override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
+            override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
+                try {
+                    savedInstanceState?.getInt(RECYCLER_INDEX_KEY).let {
+                        if (it != null) {
+                            binding.representativeList.layoutManager!!.scrollToPosition(it + it)
+                        }
+                    }
+                } catch (e: Exception) {
+                }
+            }
+            override fun onTransitionTrigger(
+                motionLayout: MotionLayout?,
+                triggerId: Int,
+                positive: Boolean,
+                progress: Float
+            ) {
+            }
+        })
+        savedInstanceState?.getInt(MOTIONLAYOUT_KEY)?.let {
+            binding.representativeLayout.transitionToState(it)
         }
 
 
@@ -133,8 +167,7 @@ class DetailFragment : Fragment() {
     private fun getLocation() {
         //TODO: Get location from LocationServices
         try {
-            fusedLocationClient =
-                LocationServices.getFusedLocationProviderClient(activity as Activity)
+
             if (isLocationEnabled()) {
                 fusedLocationClient.lastLocation.addOnSuccessListener {
                     if (it == null) {
@@ -142,14 +175,22 @@ class DetailFragment : Fragment() {
                     } else {
                         lastLocation = it
                     }
-                    val currentAddress = geoCodeLocation(lastLocation)
-                    binding.addressLine1.setText(currentAddress.line1)
-                    binding.addressLine2.setText(currentAddress.line2)
-                    binding.city.setText(currentAddress.city)
-                    binding.zip.setText(currentAddress.zip)
-                    setSpinnerValue(currentAddress.state)
+                    if(::lastLocation.isInitialized) {
+                        val currentAddress = geoCodeLocation(lastLocation)
+                        binding.addressLine1.setText(currentAddress.line1)
+                        binding.addressLine2.setText(currentAddress.line2)
+                        binding.city.setText(currentAddress.city)
+                        binding.zip.setText(currentAddress.zip)
+                        setSpinnerValue(currentAddress.state)
+                    }else{
+                        getLocation()
+                    }
 
+                }
 
+                fusedLocationClient.lastLocation.addOnFailureListener {
+                    Log.e("" , "Unable to fetch the last location.. Retry once!")
+                    requestNewLocationData()
                 }
             } else {
                 Toast.makeText(
@@ -196,8 +237,25 @@ class DetailFragment : Fragment() {
 
     private fun requestNewLocationData(){
         try {
-            val locationRequest = LocationRequest()
+            val locationRequest = LocationRequest.create()
             locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+
+            val locationCallback: LocationCallback = object : LocationCallback() {
+                override fun onLocationResult(locationResult: LocationResult) {
+                    //lastLocation = locationResult.lastLocation
+                    //getLocation()
+
+                    if (locationResult == null) {
+                        return
+                    }
+                    for (location in locationResult.locations) {
+                        // Update UI with location data
+                        lastLocation = location
+                        Log.d("TAG", "onLocationResult: " + lastLocation.getLatitude())
+                    }
+                }
+            }
+
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback,
@@ -209,11 +267,21 @@ class DetailFragment : Fragment() {
 
     }
 
-    private val locationCallback: LocationCallback = object : LocationCallback() {
+   /* private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            lastLocation = locationResult.lastLocation
+            //lastLocation = locationResult.lastLocation
+            //getLocation()
+
+            if (locationResult == null) {
+                return
+            }
+            for (location in locationResult.locations) {
+                // Update UI with location data
+                lastLocation = location
+                Log.d("TAG", "onLocationResult: " + lastLocation.getLatitude())
+            }
         }
-    }
+    }*/
 
 
     private fun isLocationEnabled(): Boolean {
@@ -225,8 +293,25 @@ class DetailFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBundle("layoutState", binding.representativeLayout.transitionState)
+        outState.putInt(MOTIONLAYOUT_KEY, binding.representativeLayout.currentState)
+        val index: Int = (binding.representativeList.layoutManager
+                as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
+        outState.putInt(RECYCLER_INDEX_KEY,index)
+       val recycerData = (binding.representativeList.layoutManager as LinearLayoutManager).onSaveInstanceState()
+        outState.putParcelable(RECYCLER_DATA,recycerData)
     }
+
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        if(savedInstanceState != null){
+            (binding.representativeList.layoutManager as LinearLayoutManager).onRestoreInstanceState(savedInstanceState.getParcelable(RECYCLER_DATA))
+        }
+    }
+
+
+
+
 
 
 
