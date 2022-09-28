@@ -58,4 +58,11 @@ class RepresentativeViewModel(val database:ElectionDatabase): ViewModel() {
 
     }
 
+
+
+    fun getRepresentativeFromSaveInstanceState(repList:List<Representative>){
+        if(repList!=null){
+            _representatives.value = repList
+        }
+    }
 }
