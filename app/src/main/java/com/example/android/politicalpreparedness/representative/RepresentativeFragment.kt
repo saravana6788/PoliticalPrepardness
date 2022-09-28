@@ -28,8 +28,10 @@ import com.example.android.politicalpreparedness.database.ElectionDatabase
 import com.example.android.politicalpreparedness.databinding.FragmentRepresentativeBinding
 import com.example.android.politicalpreparedness.network.models.Address
 import com.example.android.politicalpreparedness.representative.adapter.RepresentativeListAdapter
+import com.example.android.politicalpreparedness.representative.model.Representative
 import com.google.android.gms.location.*
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 class DetailFragment : Fragment() {
@@ -37,29 +39,37 @@ class DetailFragment : Fragment() {
     companion object {
         //TODO: Add Constant for Location request
         private const val REQUEST_LOCATION_PERMISSION = 1
-        private const val  RECYCLER_INDEX_KEY = "representative_recycler_index"
-        private const val  MOTIONLAYOUT_KEY = "layout_state"
+        private const val RECYCLER_INDEX_KEY = "representative_recycler_index"
+        private const val MOTIONLAYOUT_KEY = "layout_state"
         private const val RECYCLER_DATA = "representative_data"
+        private const val REPRESENTATIVE_LIST_DATA = "representative_list_data"
     }
 
     //TODO: Declare ViewModel
 
-    private lateinit var binding:FragmentRepresentativeBinding
+    private lateinit var binding: FragmentRepresentativeBinding
 
-    private lateinit var viewModel:RepresentativeViewModel
+    private lateinit var viewModel: RepresentativeViewModel
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var lastLocation:Location
+    private lateinit var lastLocation: Location
 
 
-    override fun onCreateView(inflater: LayoutInflater,
-                              container: ViewGroup?,
-                              savedInstanceState: Bundle?): View {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
 
         //TODO: Establish bindings
         binding = FragmentRepresentativeBinding.inflate(inflater)
         //savedInstanceState?.getInt(MOTIONLAYOUT_KEY)?.let { binding.representativeLayout.transitionToState(it)  }
-        val viewModelFactory = RepresentativeViewModelFactory(ElectionDatabase.getInstance(requireContext()))
-        viewModel = ViewModelProvider(this,viewModelFactory)[RepresentativeViewModel::class.java]
+        val viewModelFactory =
+            RepresentativeViewModelFactory(ElectionDatabase.getInstance(requireContext()))
+        viewModel = ViewModelProvider(this, viewModelFactory)[RepresentativeViewModel::class.java]
+        //fetching tjhe representative list from the saveInstanceState and assigning it to the recycler view on creating the fragment again
+        savedInstanceState?.getParcelableArrayList<Representative>(REPRESENTATIVE_LIST_DATA)?.toList()
+            ?.let { viewModel.getRepresentativeFromSaveInstanceState(it) }
+
         fusedLocationClient =
             LocationServices.getFusedLocationProviderClient(requireContext())
         binding.lifecycleOwner = this
@@ -74,7 +84,8 @@ class DetailFragment : Fragment() {
             val city = binding.city.text.toString()
             val state = binding.state.selectedItem.toString()
             val zip = binding.zip.text.toString()
-            val searchAddress = Address(addressLine1,addressLine2,city,state,zip).toFormattedString()
+            val searchAddress =
+                Address(addressLine1, addressLine2, city, state, zip).toFormattedString()
             viewModel.getRepresentatives(searchAddress)
         }
         //TODO: Define and assign Representative adapter
@@ -84,26 +95,42 @@ class DetailFragment : Fragment() {
 
         }
 
-        viewModel.representative.observe(viewLifecycleOwner){
+        viewModel.representative.observe(viewLifecycleOwner) {
             val adapter = RepresentativeListAdapter()
             adapter.submitList(it)
             binding.representativeList.adapter = adapter
             try {
                 savedInstanceState?.getInt(RECYCLER_INDEX_KEY).let {
-                    if (it != null) { binding.representativeList.layoutManager!!.scrollToPosition(it+it)
-                    }}
-            }catch (e:Exception){
+                    if (it != null) {
+                        binding.representativeList.layoutManager!!.scrollToPosition(it + it)
+                    }
+                }
+            } catch (e: Exception) {
             }
         }
 
-        viewModel.error.observe(viewLifecycleOwner){
-            Toast.makeText(requireContext(),it,Toast.LENGTH_LONG).show()
+        viewModel.error.observe(viewLifecycleOwner) {
+            Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
         }
 
 
-        binding.representativeLayout.addTransitionListener(object : MotionLayout.TransitionListener {
-            override fun onTransitionStarted(motionLayout: MotionLayout?, startId: Int, endId: Int) {}
-            override fun onTransitionChange(motionLayout: MotionLayout?, startId: Int, endId: Int, progress: Float) {}
+        binding.representativeLayout.addTransitionListener(object :
+            MotionLayout.TransitionListener {
+            override fun onTransitionStarted(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int
+            ) {
+            }
+
+            override fun onTransitionChange(
+                motionLayout: MotionLayout?,
+                startId: Int,
+                endId: Int,
+                progress: Float
+            ) {
+            }
+
             override fun onTransitionCompleted(motionLayout: MotionLayout?, currentId: Int) {
                 try {
                     savedInstanceState?.getInt(RECYCLER_INDEX_KEY).let {
@@ -114,6 +141,7 @@ class DetailFragment : Fragment() {
                 } catch (e: Exception) {
                 }
             }
+
             override fun onTransitionTrigger(
                 motionLayout: MotionLayout?,
                 triggerId: Int,
@@ -130,10 +158,14 @@ class DetailFragment : Fragment() {
         //TODO: Populate Representative adapter
 
         //TODO: Establish button listeners for field and location search
-    return binding.root
+        return binding.root
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         //TODO: Handle location permission result to get location on permission granted
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
@@ -149,17 +181,26 @@ class DetailFragment : Fragment() {
             true
         } else {
             requestPermissions(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,Manifest.permission.ACCESS_COARSE_LOCATION),
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
                 REQUEST_LOCATION_PERMISSION
             )
             false
         }
     }
 
-    private fun isPermissionGranted() : Boolean {
+    private fun isPermissionGranted(): Boolean {
         //TODO: Check if permission is already granted and return (true = granted, false = denied/other)
-        return ContextCompat.checkSelfPermission(requireContext(),Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(requireContext(),Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(
+            requireContext(),
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(
+                    requireContext(),
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
     }
 
@@ -175,21 +216,21 @@ class DetailFragment : Fragment() {
                     } else {
                         lastLocation = it
                     }
-                    if(::lastLocation.isInitialized) {
+                    if (::lastLocation.isInitialized) {
                         val currentAddress = geoCodeLocation(lastLocation)
                         binding.addressLine1.setText(currentAddress.line1)
                         binding.addressLine2.setText(currentAddress.line2)
                         binding.city.setText(currentAddress.city)
                         binding.zip.setText(currentAddress.zip)
                         setSpinnerValue(currentAddress.state)
-                    }else{
+                    } else {
                         getLocation()
                     }
 
                 }
 
                 fusedLocationClient.lastLocation.addOnFailureListener {
-                    Log.e("" , "Unable to fetch the last location.. Retry once!")
+                    Log.e("", "Unable to fetch the last location.. Retry once!")
                     requestNewLocationData()
                 }
             } else {
@@ -201,19 +242,25 @@ class DetailFragment : Fragment() {
                 val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
                 startActivity(intent)
             }
-        }catch (exception:SecurityException){
-        Log.e("RepresentativeFrag","Permission Issue")
-    }
+        } catch (exception: SecurityException) {
+            Log.e("RepresentativeFrag", "Permission Issue")
+        }
         //TODO: The geoCodeLocation method is a helper function to change the lat/long location to a human readable street address
     }
 
     private fun geoCodeLocation(location: Location): Address {
         val geocoder = Geocoder(context, Locale.getDefault())
         return geocoder.getFromLocation(location.latitude, location.longitude, 1)
-                .map { address ->
-                    Address(address.thoroughfare, address.subThoroughfare, address.locality, address.adminArea, address.postalCode)
-                }
-                .first()
+            .map { address ->
+                Address(
+                    address.thoroughfare,
+                    address.subThoroughfare,
+                    address.locality,
+                    address.adminArea,
+                    address.postalCode
+                )
+            }
+            .first()
     }
 
     private fun hideKeyboard() {
@@ -221,7 +268,7 @@ class DetailFragment : Fragment() {
         imm.hideSoftInputFromWindow(view!!.windowToken, 0)
     }
 
-    private fun setSpinnerValue(state:String){
+    private fun setSpinnerValue(state: String) {
         val adapter = ArrayAdapter.createFromResource(
             requireContext(),
             R.array.states,
@@ -230,12 +277,12 @@ class DetailFragment : Fragment() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.state.adapter = adapter
 
-            val spinnerPosition = adapter.getPosition(state)
-            binding.state.setSelection(spinnerPosition)
+        val spinnerPosition = adapter.getPosition(state)
+        binding.state.setSelection(spinnerPosition)
 
     }
 
-    private fun requestNewLocationData(){
+    private fun requestNewLocationData() {
         try {
             val locationRequest = LocationRequest.create()
             locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
@@ -261,13 +308,13 @@ class DetailFragment : Fragment() {
                 locationCallback,
                 Looper.myLooper()
             )
-        }catch (exception:SecurityException){
-                Log.e("RepresentativeFrag","Permission Issue")
+        } catch (exception: SecurityException) {
+            Log.e("RepresentativeFrag", "Permission Issue")
         }
 
     }
 
-   /* private val locationCallback: LocationCallback = object : LocationCallback() {
+    /* private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             //lastLocation = locationResult.lastLocation
             //getLocation()
@@ -285,7 +332,8 @@ class DetailFragment : Fragment() {
 
 
     private fun isLocationEnabled(): Boolean {
-        val locationManager = requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locationManager =
+            requireContext().getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
             LocationManager.NETWORK_PROVIDER
         )
@@ -296,24 +344,13 @@ class DetailFragment : Fragment() {
         outState.putInt(MOTIONLAYOUT_KEY, binding.representativeLayout.currentState)
         val index: Int = (binding.representativeList.layoutManager
                 as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
-        outState.putInt(RECYCLER_INDEX_KEY,index)
-       val recycerData = (binding.representativeList.layoutManager as LinearLayoutManager).onSaveInstanceState()
-        outState.putParcelable(RECYCLER_DATA,recycerData)
+        outState.putInt(RECYCLER_INDEX_KEY, index)
+        val recycerData =
+            (binding.representativeList.layoutManager as LinearLayoutManager).onSaveInstanceState()
+        outState.putParcelable(RECYCLER_DATA, recycerData)
+
+        // Adding the list of representatives to the savenstanceState.
+        val representative_list_data = viewModel.representative.value as ArrayList<Representative>
+        outState.putParcelableArrayList(REPRESENTATIVE_LIST_DATA, representative_list_data)
     }
-
-
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-        if(savedInstanceState != null){
-            (binding.representativeList.layoutManager as LinearLayoutManager).onRestoreInstanceState(savedInstanceState.getParcelable(RECYCLER_DATA))
-        }
-    }
-
-
-
-
-
-
-
-
 }
