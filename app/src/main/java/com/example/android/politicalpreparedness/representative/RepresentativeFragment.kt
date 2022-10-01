@@ -39,9 +39,9 @@ class DetailFragment : Fragment() {
     companion object {
         //TODO: Add Constant for Location request
         private const val REQUEST_LOCATION_PERMISSION = 1
-        private const val RECYCLER_INDEX_KEY = "representative_recycler_index"
+        //private const val RECYCLER_INDEX_KEY = "representative_recycler_index"
         private const val MOTIONLAYOUT_KEY = "layout_state"
-        private const val RECYCLER_DATA = "representative_data"
+        //private const val RECYCLER_DATA = "representative_data"
         private const val REPRESENTATIVE_LIST_DATA = "representative_list_data"
     }
 
@@ -98,15 +98,16 @@ class DetailFragment : Fragment() {
         viewModel.representative.observe(viewLifecycleOwner) {
             val adapter = RepresentativeListAdapter()
             adapter.submitList(it)
+            adapter.notifyDataSetChanged()
             binding.representativeList.adapter = adapter
-            try {
+            /*try {
                 savedInstanceState?.getInt(RECYCLER_INDEX_KEY).let {
                     if (it != null) {
                         binding.representativeList.layoutManager!!.scrollToPosition(it + it)
                     }
                 }
             } catch (e: Exception) {
-            }
+            }*/
         }
 
         viewModel.error.observe(viewLifecycleOwner) {
@@ -114,7 +115,7 @@ class DetailFragment : Fragment() {
         }
 
 
-        binding.representativeLayout.addTransitionListener(object :
+        /*binding.representativeLayout.addTransitionListener(object :
             MotionLayout.TransitionListener {
             override fun onTransitionStarted(
                 motionLayout: MotionLayout?,
@@ -149,9 +150,9 @@ class DetailFragment : Fragment() {
                 progress: Float
             ) {
             }
-        })
-        savedInstanceState?.getInt(MOTIONLAYOUT_KEY)?.let {
-            binding.representativeLayout.transitionToState(it)
+        })*/
+        savedInstanceState?.getBundle(MOTIONLAYOUT_KEY)?.let {
+            binding.representativeLayout.transitionState = it
         }
 
 
@@ -341,13 +342,13 @@ class DetailFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putInt(MOTIONLAYOUT_KEY, binding.representativeLayout.currentState)
-        val index: Int = (binding.representativeList.layoutManager
+        outState.putBundle(MOTIONLAYOUT_KEY, binding.representativeLayout.transitionState)
+        /*val index: Int = (binding.representativeList.layoutManager
                 as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
         outState.putInt(RECYCLER_INDEX_KEY, index)
         val recycerData =
             (binding.representativeList.layoutManager as LinearLayoutManager).onSaveInstanceState()
-        outState.putParcelable(RECYCLER_DATA, recycerData)
+        outState.putParcelable(RECYCLER_DATA, recycerData)*/
 
         // Adding the list of representatives to the savenstanceState.
         val representative_list_data = viewModel.representative.value as ArrayList<Representative>
