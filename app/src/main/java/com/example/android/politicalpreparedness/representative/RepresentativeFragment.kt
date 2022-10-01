@@ -151,8 +151,8 @@ class DetailFragment : Fragment() {
             ) {
             }
         })*/
-        savedInstanceState?.getBundle(MOTIONLAYOUT_KEY)?.let {
-            binding.representativeLayout.transitionState = it
+        savedInstanceState?.getInt(MOTIONLAYOUT_KEY)?.let {
+            binding.representativeLayout.transitionToState(it)
         }
 
 
@@ -342,7 +342,7 @@ class DetailFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBundle(MOTIONLAYOUT_KEY, binding.representativeLayout.transitionState)
+        outState.putInt(MOTIONLAYOUT_KEY, binding.representativeLayout.currentState)
         /*val index: Int = (binding.representativeList.layoutManager
                 as LinearLayoutManager).findFirstCompletelyVisibleItemPosition()
         outState.putInt(RECYCLER_INDEX_KEY, index)
@@ -351,7 +351,12 @@ class DetailFragment : Fragment() {
         outState.putParcelable(RECYCLER_DATA, recycerData)*/
 
         // Adding the list of representatives to the savenstanceState.
-        val representative_list_data = viewModel.representative.value as ArrayList<Representative>
-        outState.putParcelableArrayList(REPRESENTATIVE_LIST_DATA, representative_list_data)
+        if(!viewModel.representative.value.isNullOrEmpty()) {
+            val representative_list_data =
+                viewModel.representative.value as ArrayList<Representative>
+
+            outState.putParcelableArrayList(REPRESENTATIVE_LIST_DATA, representative_list_data)
+        }
+
     }
 }
